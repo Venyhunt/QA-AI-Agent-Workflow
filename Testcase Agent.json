@@ -1,0 +1,59 @@
+{
+  "name": "Testcase Agent",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "dedcd3a4-8524-484d-b574-825ec6ac6208",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "fileSelector": "/home/node/.n8n-files/srs-sample1.pdf",
+        "options": {
+          "fileName": ""
+        }
+      },
+      "type": "n8n-nodes-base.readWriteFile",
+      "typeVersion": 1.1,
+      "position": [
+        208,
+        0
+      ],
+      "id": "88a01162-d13c-458a-bc76-e54604017552",
+      "name": "Read/Write Files from Disk",
+      "executeOnce": false
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "Read/Write Files from Disk",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "33461fcc-ef5a-41ea-8213-81e57f1ee45e",
+  "meta": {
+    "instanceId": "b6bdc286e0a9567729146fc7fbac8f35d10f2eb6b6aa695cb8851b2f9b05a46c"
+  },
+  "id": "UGO7KCMopPKmEzA_zSU6z",
+  "tags": []
+}
