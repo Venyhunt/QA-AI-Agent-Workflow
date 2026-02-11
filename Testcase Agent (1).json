@@ -1,0 +1,204 @@
+{
+  "name": "Testcase Agent",
+  "nodes": [
+    {
+      "parameters": {
+        "operation": "pdf",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1.1,
+      "position": [
+        416,
+        0
+      ],
+      "id": "7930d35d-7073-4315-8d48-5a9c2573fbdc",
+      "name": "Extract from File"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "dedcd3a4-8524-484d-b574-825ec6ac6208",
+      "name": "manual trigger"
+    },
+    {
+      "parameters": {
+        "fileSelector": "/home/node/.n8n-files/srs-sample1.pdf",
+        "options": {
+          "fileName": ""
+        }
+      },
+      "type": "n8n-nodes-base.readWriteFile",
+      "typeVersion": 1.1,
+      "position": [
+        208,
+        0
+      ],
+      "id": "88a01162-d13c-458a-bc76-e54604017552",
+      "name": "read srs docs",
+      "executeOnce": false
+    },
+    {
+      "parameters": {
+        "jsCode": "const text = $json.text;\n\nconst chunkSize = 1000; // characters per chunk\nconst chunks = [];\n\nfor (let i = 0; i < text.length; i += chunkSize) {\n  chunks.push({\n    json: {\n      chunk: text.slice(i, i + chunkSize)\n    }\n  });\n}\n\nreturn chunks;\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        624,
+        0
+      ],
+      "id": "e7132461-104f-4b24-b474-ee67408b9421",
+      "name": "chunks and flattens the data"
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-4.1-mini",
+          "mode": "list",
+          "cachedResultName": "GPT-4.1-MINI"
+        },
+        "responses": {
+          "values": [
+            {
+              "content": "=You are a senior QA engineer.\n\nGenerate high-quality, non-overlapping, traceable test cases from the given software requirements.\n\nRules:\n- Avoid duplicate test cases.\n- Each test case must test one logical behavior.\n- Make test steps clear and numbered.\n- Expected result must be precise and testable.\n- Assign realistic priority: High / Medium / Low.\n\nReturn ONLY valid JSON.\nDo not include markdown.\nDo not wrap in backticks.\nDo not include explanations.\n\nFormat:\n\n{\n  \"test_cases\": [\n    {\n      \"test_case_id\": \"\",\n      \"title\": \"\",\n      \"requirement_reference\": \"\",\n      \"preconditions\": \"\",\n      \"test_steps\": \"\",\n      \"expected_result\": \"\",\n      \"priority\": \"\"\n    }\n  ]\n}\n\nRequirements:\n{{$json.chunk}}\n"
+            }
+          ]
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 2.1,
+      "position": [
+        832,
+        0
+      ],
+      "id": "1141f297-d088-4e0b-80bb-82ab37394d42",
+      "name": "chunks to test cases",
+      "credentials": {
+        "openAiApi": {
+          "id": "VvojiOKRzxjWd8vH",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const raw = $json.output[0].content[0].text;\nconst cleaned = raw.replace(/```json|```/g, '').trim();\nconst parsed = JSON.parse(cleaned);\n\nreturn parsed.test_cases.map(tc => ({\n  json: tc\n}));\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1184,
+        0
+      ],
+      "id": "3935b22e-f1ed-4057-9109-b585446847ef",
+      "name": "json of test cases"
+    },
+    {
+      "parameters": {
+        "operation": "xlsx",
+        "options": {
+          "fileName": "Generated_test_cases"
+        }
+      },
+      "type": "n8n-nodes-base.convertToFile",
+      "typeVersion": 1.1,
+      "position": [
+        1392,
+        0
+      ],
+      "id": "9ae5aa46-f47e-455c-acf7-9da9b76ab384",
+      "name": "creates a spreadsheet "
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Extract from File": {
+      "main": [
+        [
+          {
+            "node": "chunks and flattens the data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "manual trigger": {
+      "main": [
+        [
+          {
+            "node": "read srs docs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "read srs docs": {
+      "main": [
+        [
+          {
+            "node": "Extract from File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "chunks and flattens the data": {
+      "main": [
+        [
+          {
+            "node": "chunks to test cases",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "chunks to test cases": {
+      "main": [
+        [
+          {
+            "node": "json of test cases",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "json of test cases": {
+      "main": [
+        [
+          {
+            "node": "creates a spreadsheet ",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "4f307336-72e9-4163-949b-c0fd89db030e",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "b6bdc286e0a9567729146fc7fbac8f35d10f2eb6b6aa695cb8851b2f9b05a46c"
+  },
+  "id": "UGO7KCMopPKmEzA_zSU6z",
+  "tags": []
+}
