@@ -22,7 +22,7 @@ SRD (PDF)
 
 ---
 
-## 🛠 Tech Stack
+ Tech Stack
 
 - n8n (Self-hosted via Docker)
 - Docker (Containerized local deployment with volume mounting)
