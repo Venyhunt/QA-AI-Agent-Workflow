@@ -43,9 +43,9 @@ Current Capabilities
 
  Example Files
 
-- `library_srs.pdf` → Sample input SRD
+- `srs-sample 1.pdf` → Sample input SRD
 - `generated_test_cases.xlsx` → Sample AI-generated test cases
-- `srd_to_testcases.json` → n8n workflow export
+- `Test Agent.json` → n8n workflow export
 
 
  Future Improvements
