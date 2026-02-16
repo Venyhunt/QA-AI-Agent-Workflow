@@ -4,7 +4,7 @@ SRD → QA Test Case Automation (n8n + OpenAI)
 This project automates the generation of structured QA test cases from a Software Requirements Document (SRD/SRS) using n8n and OpenAI.
 
 Instead of manually writing test cases, the workflow:
-1. Reads an SRD (PDF)
+1. Reads an SRs (PDF)
 2. Extracts requirement content
 3. Uses OpenAI to generate structured test cases
 4. Parses and validates JSON output
@@ -14,7 +14,7 @@ Instead of manually writing test cases, the workflow:
 
  Architecture
 
-SRD (PDF)  
+SRS (PDF)  
 → Text Extraction  
 → OpenAI (Structured Test Case Generation)  
 → JSON Parsing (Code Node)  
