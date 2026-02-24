@@ -1,0 +1,198 @@
+{
+  "name": "QA agent 2.0",
+  "nodes": [
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "triggerOn": "specificFolder",
+        "folderToWatch": {
+          "__rl": true,
+          "value": "1ECAew5Yk3HcUi5PHyqPxlgy7i8TLKh4-",
+          "mode": "list",
+          "cachedResultName": "n8n-trigger folder",
+          "cachedResultUrl": "https://drive.google.com/drive/folders/1ECAew5Yk3HcUi5PHyqPxlgy7i8TLKh4-"
+        },
+        "event": "fileCreated",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDriveTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "1bcd7fd3-fc84-498f-a549-0c46a3b5e56d",
+      "name": "Google Drive Trigger",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "rzubAeaubdwv1fIV",
+          "name": "Google Drive account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "download",
+        "fileId": {
+          "__rl": true,
+          "value": "={{$json[\"id\"]}}",
+          "mode": "id"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        208,
+        0
+      ],
+      "id": "00e5267b-272e-4354-abb0-bb3e003f4426",
+      "name": "Download file",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "rzubAeaubdwv1fIV",
+          "name": "Google Drive account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "pdf",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1.1,
+      "position": [
+        416,
+        0
+      ],
+      "id": "0862b10d-1a64-4813-91f6-829a94d0d6fa",
+      "name": "Extract from File"
+    },
+    {
+      "parameters": {
+        "jsCode": "const text = $json.text;\n\nconst chunkSize = 1200;\nconst overlap = 250;\n\n// Split by blank lines (better than simple \"\\n\")\nconst paragraphs = text.split(/\\n\\s*\\n/);\n\nconst chunks = [];\nlet currentChunk = \"\";\n\nfor (const para of paragraphs) {\n  \n  // If paragraph itself is larger than chunk size\n  if (para.length > chunkSize) {\n    for (let i = 0; i < para.length; i += (chunkSize - overlap)) {\n      const subChunk = para.slice(i, i + chunkSize);\n      chunks.push({\n        json: {\n          chunk: subChunk.trim()\n        }\n      });\n    }\n    continue;\n  }\n\n  // If adding paragraph exceeds chunk size\n  if ((currentChunk.length + para.length + 1) > chunkSize) {\n    \n    // Push current chunk\n    chunks.push({\n      json: {\n        chunk: currentChunk.trim()\n      }\n    });\n\n    // Add overlap from previous chunk\n    const overlapText = currentChunk.slice(-overlap);\n    currentChunk = overlapText + \"\\n\\n\" + para + \"\\n\\n\";\n    \n  } else {\n    currentChunk += para + \"\\n\\n\";\n  }\n}\n\n// Push last chunk\nif (currentChunk.trim().length > 0) {\n  chunks.push({\n    json: {\n      chunk: currentChunk.trim()\n    }\n  });\n}\n\nreturn chunks;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        624,
+        0
+      ],
+      "id": "426a937d-2361-49cc-9616-7a220152c78b",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "options": {
+          "systemMessage": "You are a helpful assistant"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        832,
+        0
+      ],
+      "id": "f7458d97-028d-4731-8f5a-f5880232faf6",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "model": "deepseek/deepseek-r1-0528:free",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [
+        704,
+        208
+      ],
+      "id": "18ac599a-b8a5-44a4-b0dc-2d29fa937ec4",
+      "name": "OpenRouter Chat Model",
+      "credentials": {
+        "openRouterApi": {
+          "id": "0T90nDK0ewiZsBYk",
+          "name": "OpenRouter account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Google Drive Trigger": {
+      "main": [
+        [
+          {
+            "node": "Download file",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download file": {
+      "main": [
+        [
+          {
+            "node": "Extract from File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract from File": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenRouter Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "ad5fd959-64d1-45d5-b672-56b7fbd511c8",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "102f7b690b61c75a823c2ff731a15961d54d2d54b1488aa0e67bea92ba1ef634"
+  },
+  "id": "12e1EfzEj79iMlGV",
+  "tags": []
+}
