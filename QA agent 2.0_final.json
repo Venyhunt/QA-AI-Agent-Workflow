@@ -1,0 +1,458 @@
+{
+  "name": "QA agent 2.0",
+  "nodes": [
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "triggerOn": "specificFolder",
+        "folderToWatch": {
+          "__rl": true,
+          "value": "1ECAew5Yk3HcUi5PHyqPxlgy7i8TLKh4-",
+          "mode": "list",
+          "cachedResultName": "n8n-trigger folder",
+          "cachedResultUrl": "https://drive.google.com/drive/folders/1ECAew5Yk3HcUi5PHyqPxlgy7i8TLKh4-"
+        },
+        "event": "fileCreated",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDriveTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "1bcd7fd3-fc84-498f-a549-0c46a3b5e56d",
+      "name": "Google Drive Trigger",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "rzubAeaubdwv1fIV",
+          "name": "Google Drive account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "download",
+        "fileId": {
+          "__rl": true,
+          "value": "={{$json[\"id\"]}}",
+          "mode": "id"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        208,
+        0
+      ],
+      "id": "00e5267b-272e-4354-abb0-bb3e003f4426",
+      "name": "Download file",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "rzubAeaubdwv1fIV",
+          "name": "Google Drive account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "pdf",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1.1,
+      "position": [
+        416,
+        0
+      ],
+      "id": "0862b10d-1a64-4813-91f6-829a94d0d6fa",
+      "name": "Extract from File"
+    },
+    {
+      "parameters": {
+        "jsCode": "const text = $json.text;\n\nconst chunkSize = 1200;\nconst overlap = 250;\n\n// Split by blank lines (better than simple \"\\n\")\nconst paragraphs = text.split(/\\n\\s*\\n/);\n\nconst chunks = [];\nlet currentChunk = \"\";\n\nfor (const para of paragraphs) {\n  \n  // If paragraph itself is larger than chunk size\n  if (para.length > chunkSize) {\n    for (let i = 0; i < para.length; i += (chunkSize - overlap)) {\n      const subChunk = para.slice(i, i + chunkSize);\n      chunks.push({\n        json: {\n          chunk: subChunk.trim()\n        }\n      });\n    }\n    continue;\n  }\n\n  // If adding paragraph exceeds chunk size\n  if ((currentChunk.length + para.length + 1) > chunkSize) {\n    \n    // Push current chunk\n    chunks.push({\n      json: {\n        chunk: currentChunk.trim()\n      }\n    });\n\n    // Add overlap from previous chunk\n    const overlapText = currentChunk.slice(-overlap);\n    currentChunk = overlapText + \"\\n\\n\" + para + \"\\n\\n\";\n    \n  } else {\n    currentChunk += para + \"\\n\\n\";\n  }\n}\n\n// Push last chunk\nif (currentChunk.trim().length > 0) {\n  chunks.push({\n    json: {\n      chunk: currentChunk.trim()\n    }\n  });\n}\n\nreturn chunks;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        624,
+        0
+      ],
+      "id": "426a937d-2361-49cc-9616-7a220152c78b",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are provided with a section of a Software Requirements Specification document.\n\nSRS CONTENT:\n{{$json[\"chunk\"]}}\n\nINSTRUCTIONS:\nAnalyze the above SRS content and generate comprehensive, high-coverage, non-redundant test scenarios.\n\nFocus only on requirements present or logically implied in this content.\n\nReturn strictly valid JSON only.",
+        "options": {
+          "systemMessage": "You are a Senior QA Architect specializing in requirement analysis and enterprise-grade test design.\n\nROLE:\nYou analyze Software Requirements Specification (SRS) documents and generate high-coverage, non-redundant, structured test scenarios suitable for direct import into test management systems such as Jira, Zephyr, or TestRail.\n\nOBJECTIVE:\nFor each provided SRS content chunk:\n- Identify all explicit functional requirements\n- Infer implicit requirements\n- Detect edge cases\n- Identify negative scenarios\n- Cover boundary conditions\n- Consider validation rules\n- Consider integration behavior\n- Consider data constraints\n- Consider error handling\n- Consider security implications if applicable\n\nQUALITY RULES:\n- Avoid duplicate or semantically redundant test cases\n- Ensure maximum coverage with minimum overlap\n- Combine similar validations intelligently\n- Maintain professional QA structure\n- Use precise and testable language\n- If requirement is unclear, infer logically but do not hallucinate system features\n- Do not repeat generic test cases unless contextually necessary\n\nTEST CASE FORMAT REQUIREMENT:\nReturn ONLY structured JSON.\nEach test case must follow this schema exactly:\n\n{\n  \"Test Scenario ID\": \"\",\n  \"Module\": \"\",\n  \"Test Case Type\": \"\",\n  \"Preconditions\": \"\",\n  \"Test Case Description\": \"\",\n  \"Test Case Steps\": \"\",\n  \"Test Data\": \"\",\n  \"Expected Behavior\": \"\"\n}\n\nTest Case Type must be one of:\nFunctional\nNegative\nBoundary\nEdge\nValidation\nSecurity\nIntegration\n\nOUTPUT FORMAT REQUIREMENT:\nReturn strictly valid JSON in this format:\n\n{\n  \"test_cases\": [\n    {\n      \"Test Scenario ID\": \"\",\n      \"Module\": \"\",\n      \"Test Case Type\": \"\",\n      \"Preconditions\": \"\",\n      \"Test Case Description\": \"\",\n      \"Test Case Steps\": \"\",\n      \"Test Data\": \"\",\n      \"Expected Behavior\": \"\"\n    }\n  ]\n}\n\nIMPORTANT:\n- Do not include explanations\n- Do not include markdown\n- Do not include commentary\n- Do not include text outside JSON\n- The output must be directly convertible into a CSV or spreadsheet\n- Each object represents one row in a sheet\n- Ensure formatting consistency across all test cases\n\nEnsure each Test Scenario ID follows this format:\nTC-{Module}-{Incremental Number}\nExample:\nTC-Login-001"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        832,
+        0
+      ],
+      "id": "f7458d97-028d-4731-8f5a-f5880232faf6",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "model": "openai/gpt-4o-mini",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [
+        704,
+        208
+      ],
+      "id": "18ac599a-b8a5-44a4-b0dc-2d29fa937ec4",
+      "name": "OpenRouter Chat Model",
+      "credentials": {
+        "openRouterApi": {
+          "id": "0T90nDK0ewiZsBYk",
+          "name": "OpenRouter account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const allTestCases = [];\n\nfor (const item of items) {\n  const parsed = JSON.parse(item.json.output);\n  \n  if (parsed.test_cases && parsed.test_cases.length > 0) {\n    allTestCases.push(...parsed.test_cases);\n  }\n}\n\nreturn [\n  {\n    json: {\n      test_cases: allTestCases\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1184,
+        0
+      ],
+      "id": "7dad5fd1-c935-4410-bcd3-f61e4cff8f81",
+      "name": "Code in JavaScript1"
+    },
+    {
+      "parameters": {
+        "jsCode": "const testCases = items[0].json.test_cases;\n\nreturn testCases.map(tc => {\n  return {\n    json: {\n      \"Test Scenario ID\": tc[\"Test Scenario ID\"],\n      \"Module\": tc[\"Module\"],\n      \"Test Case Type\": tc[\"Test Case Type\"],\n      \"Preconditions\": tc[\"Preconditions\"],\n      \"Test Case Description\": tc[\"Test Case Description\"],\n      \"Test Case Steps\": tc[\"Test Case Steps\"],\n      \"Test Data\": tc[\"Test Data\"],\n      \"Expected Behavior\": tc[\"Expected Behavior\"]\n    }\n  };\n});"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1392,
+        0
+      ],
+      "id": "bae2e375-7abc-4641-8a91-bc30e2a0bb15",
+      "name": "Code in JavaScript2"
+    },
+    {
+      "parameters": {
+        "resource": "spreadsheet",
+        "title": "=SRS_Test_Cases-1_{{$now}}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1664,
+        -48
+      ],
+      "id": "93ad8c54-034a-4cfc-9a8a-7d66be6afab0",
+      "name": "Create spreadsheet",
+      "executeOnce": true,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "gSZn4ll0tFSrEyiq",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "={{$node[\"Create spreadsheet\"].json[\"spreadsheetId\"]}}",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1VMSWBgxi0ziXHuGXLjQwiuQMiOdf0TEG86w9OacborA/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Test Scenario ID",
+              "displayName": "Test Scenario ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Module",
+              "displayName": "Module",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Test Case Type",
+              "displayName": "Test Case Type",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Preconditions",
+              "displayName": "Preconditions",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Test Case Description",
+              "displayName": "Test Case Description",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Test Case Steps",
+              "displayName": "Test Case Steps",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Test Data",
+              "displayName": "Test Data",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Expected Behavior",
+              "displayName": "Expected Behavior",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "spreadsheetId",
+              "displayName": "spreadsheetId",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "properties",
+              "displayName": "properties",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "sheets",
+              "displayName": "sheets",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "spreadsheetUrl",
+              "displayName": "spreadsheetUrl",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1840,
+        176
+      ],
+      "id": "12e6bf0c-af5b-40dc-a38c-93c016ec4fb1",
+      "name": "Append row in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "gSZn4ll0tFSrEyiq",
+          "name": "Google Sheets account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Google Drive Trigger": {
+      "main": [
+        [
+          {
+            "node": "Download file",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download file": {
+      "main": [
+        [
+          {
+            "node": "Extract from File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract from File": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenRouter Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript1": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript2": {
+      "main": [
+        [
+          {
+            "node": "Create spreadsheet",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Append row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create spreadsheet": {
+      "main": [
+        [
+          {
+            "node": "Append row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "bb4f0df6-5454-4170-9a78-8f47c741d8e1",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "102f7b690b61c75a823c2ff731a15961d54d2d54b1488aa0e67bea92ba1ef634"
+  },
+  "id": "12e1EfzEj79iMlGV",
+  "tags": []
+}
