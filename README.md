@@ -1,12 +1,12 @@
-SRD → QA Test Case Automation (n8n + OpenAI)
+SRS → QA Test Case Automation (n8n + OpenAI)
 
  Overview
 This project automates the generation of structured QA test cases from a Software Requirements Document (SRD/SRS) using n8n and OpenAI.
 
 Instead of manually writing test cases, the workflow:
-1. Reads an SRs (PDF)
+1. Reads an SRS (PDF)
 2. Extracts requirement content
-3. Uses OpenAI to generate structured test cases
+3. Uses Openrouter and OpenAI to generate structured test cases
 4. Parses and validates JSON output
 5. Exports formatted test cases to Excel (.xlsx)
 
@@ -16,17 +16,20 @@ Instead of manually writing test cases, the workflow:
 
 SRS (PDF)  
 → Text Extraction  
-→ OpenAI (Structured Test Case Generation)  
-→ JSON Parsing (Code Node)  
-→ Excel Export  
+→ openrouter based,OpenAI (Structured Test Case Generation)  
+→ JSON Parsing (Code Node) and flattening
+→ Excel export to sheets
 
 ---
 
  Tech Stack
 
-- n8n (Self-hosted via Docker)
-- Docker (Containerized local deployment with volume mounting)
+- n8n (Self-hosted via Node)
 - OpenAI API
+- Openrouter
+- Google cloud
+- Google drive
+- Google sheets
 - Excel (.xlsx) export
 - GitHub for version control
 
@@ -34,11 +37,11 @@ SRS (PDF)
 
 Current Capabilities
 
-- Dockerized n8n setup with persistent volume
+- node based n8n setup with persistent volume
 - PDF ingestion from local file system
 - AI-powered structured test case generation
 - JSON validation and parsing
-- Automated Excel export
+- Automated Excel export to sheets
 - Incremental Git commits tracking project evolution
 
  Example Files
